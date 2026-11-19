@@ -1,19 +1,29 @@
 {
-  "name": "retailpulse",
+  "name": "tradeframe",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "server": "node server/index.js",
+    "start": "node server/index.js",
+    "test": "node test/test-suite.js",
+    "seed": "node server/scripts/generate-samples.js",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "cors": "^2.8.6",
+    "csv-parse": "^7.0.3",
+    "express": "^5.3.0",
     "lucide-react": "^1.64.0",
+    "multer": "^2.5.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "recharts": "^3.10.1"
+    "recharts": "^3.10.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

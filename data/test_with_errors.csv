@@ -1,0 +1,9 @@
+Order ID,Order Date,Product,Category,Region,Units,Unit Price,Unit Cost,Discount Percentage
+ORD-9001,2026-03-01,Valid Product,Electronics,North,10,500,300,5
+,2026-03-02,Missing Order ID,Electronics,North,5,200,100,0
+ORD-9003,invalid-date,Bad Date,Furniture,South,2,1000,500,10
+ORD-9004,2026-03-04,Negative Units,Stationery,East,-5,100,50,0
+ORD-9005,2026-03-05,Negative Cost,Electronics,West,10,500,-100,5
+ORD-9006,2026-03-06,Excess Discount,Furniture,North,3,1500,800,150
+ORD-9007,2026-03-07,Invalid Number Price,Stationery,South,10,not_a_number,50,0
+ORD-9001,2026-03-08,Duplicate Order ID,Electronics,West,4,500,300,5
