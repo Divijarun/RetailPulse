@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   LayoutDashboard,
@@ -37,23 +38,39 @@ import SettingsPage from './pages/SettingsPage.jsx';
 
 import './App.css';
 
+// =====================================================
+// BACKEND CONFIGURATION
+// =====================================================
+
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL || 'http://localhost:5000'
+).replace(/\/$/, '');
+
+// =====================================================
+// NAVIGATION
+// =====================================================
+
 const NAV_ITEMS = [
-  { id: 'overview',      label: 'Overview',                icon: LayoutDashboard },
-  { id: 'sales',         label: 'Sales Intelligence',      icon: TrendingUp },
-  { id: 'products',      label: 'Product Performance',     icon: Package },
-  { id: 'profitability', label: 'Profitability Analysis',  icon: DollarSign },
-  { id: 'regional',      label: 'Regional Analysis',       icon: MapPin },
-  { id: 'decisions',     label: 'Business Decision Engine', icon: Brain, badge: 'AI' },
-  { id: 'whatif',        label: 'What-if Simulator',       icon: Sliders },
-  { id: 'data',          label: 'Data Management',         icon: UploadCloud },
-  { id: 'reports',       label: 'Reports',                 icon: FileText },
-  { id: 'settings',      label: 'Settings',                icon: Settings },
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'sales', label: 'Sales Intelligence', icon: TrendingUp },
+  { id: 'products', label: 'Product Performance', icon: Package },
+  { id: 'profitability', label: 'Profitability Analysis', icon: DollarSign },
+  { id: 'regional', label: 'Regional Analysis', icon: MapPin },
+  { id: 'decisions', label: 'Business Decision Engine', icon: Brain, badge: 'AI' },
+  { id: 'whatif', label: 'What-if Simulator', icon: Sliders },
+  { id: 'data', label: 'Data Management', icon: UploadCloud },
+  { id: 'reports', label: 'Reports', icon: FileText },
+  { id: 'settings', label: 'Settings', icon: Settings },
 ];
+
+// =====================================================
+// MAIN APPLICATION
+// =====================================================
 
 export default function App() {
   const [activePage, setActivePage] = useState('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [dataSource, setDataSource] = useState('live'); // 'live' | 'demo'
+  const [dataSource, setDataSource] = useState('live');
   const [loading, setLoading] = useState(false);
   const [dbConnected, setDbConnected] = useState(true);
 
@@ -79,17 +96,29 @@ export default function App() {
   const [regionalData, setRegionalData] = useState([]);
   const [salesRows, setSalesRows] = useState([]);
 
-  // Normalised Demo Data Memo
+  // Normalised Demo Data
   const demoNormalised = useMemo(() => {
     return demoSales.map(normaliseDemoRow);
   }, []);
 
-  // Compute Demo Mode Analytics in Memory
+  // =====================================================
+  // DEMO MODE ANALYTICS
+  // =====================================================
+
   const computeDemoAnalytics = useCallback(() => {
     let rows = demoNormalised;
-    if (filters.month) rows = rows.filter((r) => r.order_date.startsWith(filters.month));
-    if (filters.category) rows = rows.filter((r) => r.category === filters.category);
-    if (filters.region) rows = rows.filter((r) => r.region === filters.region);
+
+    if (filters.month) {
+      rows = rows.filter((r) => r.order_date.startsWith(filters.month));
+    }
+
+    if (filters.category) {
+      rows = rows.filter((r) => r.category === filters.category);
+    }
+
+    if (filters.region) {
+      rows = rows.filter((r) => r.region === filters.region);
+    }
 
     const orders = rows.length;
     const units = rows.reduce((s, r) => s + r.units, 0);
@@ -113,8 +142,12 @@ export default function App() {
       aov,
     });
 
-    // Monthly
-    const monthGroup = groupAndAggregate(rows, (r) => r.order_date.slice(0, 7));
+    // Monthly Analytics
+    const monthGroup = groupAndAggregate(
+      rows,
+      (r) => r.order_date.slice(0, 7)
+    );
+
     setMonthlyData(
       monthGroup.map((m) => ({
         month: m.name,
@@ -124,8 +157,9 @@ export default function App() {
       }))
     );
 
-    // Categories
+    // Category Analytics
     const catGroup = groupAndAggregate(rows, (r) => r.category);
+
     setCategoryData(
       catGroup.map((c) => ({
         name: c.name,
@@ -137,11 +171,13 @@ export default function App() {
       }))
     );
 
-    // Products
+    // Product Analytics
     const prodGroup = groupAndAggregate(rows, (r) => r.product);
+
     setProductData(
       prodGroup.map((p) => {
         const sampleRow = rows.find((r) => r.product === p.name);
+
         return {
           product: p.name,
           category: sampleRow ? sampleRow.category : 'General',
@@ -154,8 +190,9 @@ export default function App() {
       })
     );
 
-    // Regions
+    // Regional Analytics
     const regGroup = groupAndAggregate(rows, (r) => r.region);
+
     setRegionalData(
       regGroup.map((rg) => ({
         region: rg.name,
@@ -169,39 +206,92 @@ export default function App() {
 
     setSalesRows(rows);
 
-    // Filter options from demo
-    const months = [...new Set(demoNormalised.map((r) => r.order_date.slice(0, 7)))].sort();
-    const categories = [...new Set(demoNormalised.map((r) => r.category))].sort();
-    const regions = [...new Set(demoNormalised.map((r) => r.region))].sort();
+    // Demo Filter Options
+    const months = [
+      ...new Set(demoNormalised.map((r) => r.order_date.slice(0, 7))),
+    ].sort();
+
+    const categories = [
+      ...new Set(demoNormalised.map((r) => r.category)),
+    ].sort();
+
+    const regions = [
+      ...new Set(demoNormalised.map((r) => r.region)),
+    ].sort();
+
     setFilterOptions({ months, categories, regions });
+
   }, [demoNormalised, filters]);
 
-  // Live Database Fetch
+  // =====================================================
+  // LIVE DATABASE ANALYTICS
+  // CONNECTED TO RENDER BACKEND
+  // =====================================================
+
   const fetchLiveAnalytics = useCallback(async () => {
     setLoading(true);
+
     try {
       const q = new URLSearchParams();
+
       q.set('companyId', '1');
+
       if (filters.month) q.set('month', filters.month);
       if (filters.category) q.set('category', filters.category);
       if (filters.region) q.set('region', filters.region);
+
       const queryStr = q.toString() ? `?${q.toString()}` : '';
 
-      const [resOverview, resRev, resCat, resProd, resReg, resFilters, resSales] =
-        await Promise.all([
-          fetch(`/api/analytics/overview${queryStr}`),
-          fetch(`/api/analytics/revenue${queryStr}`),
-          fetch(`/api/analytics/categories${queryStr}`),
-          fetch(`/api/analytics/products${queryStr}`),
-          fetch(`/api/analytics/regions${queryStr}`),
-          fetch(`/api/analytics/filters?companyId=1`),
-          fetch(`/api/sales${queryStr ? queryStr + '&limit=500' : '?limit=500'}`),
-        ]);
+      // All API requests now use the Render backend URL.
 
-      if (!resOverview.ok) {
-        throw new Error('API request failed');
+      const [
+        resOverview,
+        resRev,
+        resCat,
+        resProd,
+        resReg,
+        resFilters,
+        resSales,
+      ] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/analytics/overview${queryStr}`),
+
+        fetch(`${API_BASE_URL}/api/analytics/revenue${queryStr}`),
+
+        fetch(`${API_BASE_URL}/api/analytics/categories${queryStr}`),
+
+        fetch(`${API_BASE_URL}/api/analytics/products${queryStr}`),
+
+        fetch(`${API_BASE_URL}/api/analytics/regions${queryStr}`),
+
+        fetch(`${API_BASE_URL}/api/analytics/filters?companyId=1`),
+
+        fetch(
+          `${API_BASE_URL}/api/sales${
+            queryStr ? queryStr + '&limit=500' : '?limit=500'
+          }`
+        ),
+      ]);
+
+      // Check API Responses
+      const responses = [
+        resOverview,
+        resRev,
+        resCat,
+        resProd,
+        resReg,
+        resFilters,
+        resSales,
+      ];
+
+      const failedResponse = responses.find((res) => !res.ok);
+
+      if (failedResponse) {
+        throw new Error(
+          `API request failed: ${failedResponse.status} ${failedResponse.url}`
+        );
       }
 
+      // Parse API Data
       const dOverview = await resOverview.json();
       const dRev = await resRev.json();
       const dCat = await resCat.json();
@@ -210,9 +300,13 @@ export default function App() {
       const dFilters = await resFilters.json();
       const dSales = await resSales.json();
 
-      const rawOverview = dOverview.data || dOverview.overview || {};
+      // Overview Metrics
+      const rawOverview =
+        dOverview.data || dOverview.overview || {};
+
       const rev = Number(rawOverview.revenue || 0);
       const orders = Number(rawOverview.orders || 0);
+
       setMetrics({
         orders,
         units: Number(rawOverview.units || 0),
@@ -225,7 +319,10 @@ export default function App() {
         aov: orders > 0 ? rev / orders : 0,
       });
 
-      const rawMonthly = dRev.data || dRev.monthly || [];
+      // Revenue Analytics
+      const rawMonthly =
+        dRev.data || dRev.monthly || [];
+
       setMonthlyData(
         rawMonthly.map((m) => ({
           month: m.month || m.key,
@@ -235,7 +332,10 @@ export default function App() {
         }))
       );
 
-      const rawCat = dCat.data || dCat.categories || [];
+      // Category Analytics
+      const rawCat =
+        dCat.data || dCat.categories || [];
+
       setCategoryData(
         rawCat.map((c) => ({
           name: c.name || c.category,
@@ -247,7 +347,10 @@ export default function App() {
         }))
       );
 
-      const rawProd = dProd.data || dProd.products || [];
+      // Product Analytics
+      const rawProd =
+        dProd.data || dProd.products || [];
+
       setProductData(
         rawProd.map((p) => ({
           product: p.product,
@@ -260,7 +363,10 @@ export default function App() {
         }))
       );
 
-      const rawReg = dReg.data || dReg.regions || [];
+      // Regional Analytics
+      const rawReg =
+        dReg.data || dReg.regions || [];
+
       setRegionalData(
         rawReg.map((r) => ({
           region: r.region,
@@ -272,49 +378,86 @@ export default function App() {
         }))
       );
 
-      const rawFilters = dFilters.data || dFilters || {};
+      // Filter Options
+      const rawFilters =
+        dFilters.data || dFilters || {};
+
       setFilterOptions({
         months: rawFilters.months || [],
         categories: rawFilters.categories || [],
         regions: rawFilters.regions || [],
       });
 
-      setSalesRows(dSales.data || dSales.sales || []);
+      // Sales Records
+      setSalesRows(
+        dSales.data || dSales.sales || []
+      );
+
       setDbConnected(true);
+
     } catch (err) {
-      console.warn('Backend SQLite API unavailable or empty, falling back to Demo Mode:', err.message);
+      console.warn(
+        'Backend SQLite API unavailable or empty, falling back to Demo Mode:',
+        err.message
+      );
+
       setDbConnected(false);
       setDataSource('demo');
       computeDemoAnalytics();
+
     } finally {
       setLoading(false);
     }
+
   }, [filters, computeDemoAnalytics]);
 
-  // Load data on change of source or filters
+  // =====================================================
+  // LOAD DATA WHEN SOURCE OR FILTERS CHANGE
+  // =====================================================
+
   useEffect(() => {
     if (dataSource === 'live') {
       fetchLiveAnalytics();
     } else {
       computeDemoAnalytics();
     }
-  }, [dataSource, filters, fetchLiveAnalytics, computeDemoAnalytics]);
+  }, [
+    dataSource,
+    filters,
+    fetchLiveAnalytics,
+    computeDemoAnalytics,
+  ]);
 
-  // Filter Handlers
+  // =====================================================
+  // FILTER HANDLERS
+  // =====================================================
+
   const handleFilterChange = (key, val) => {
-    setFilters((prev) => ({ ...prev, [key]: val }));
+    setFilters((prev) => ({
+      ...prev,
+      [key]: val,
+    }));
   };
 
   const handleResetFilters = () => {
-    setFilters({ month: '', category: '', region: '', search: '' });
+    setFilters({
+      month: '',
+      category: '',
+      region: '',
+      search: '',
+    });
   };
 
-  // CSV Export Action
+  // =====================================================
+  // CSV EXPORT
+  // =====================================================
+
   const handleExportCSV = () => {
     if (!salesRows || salesRows.length === 0) {
       alert('No data available to export.');
       return;
     }
+
     const headers = [
       'Order ID',
       'Date',
@@ -329,6 +472,7 @@ export default function App() {
       'Gross Profit',
       'Gross Margin %',
     ];
+
     const csvLines = [headers.join(',')];
 
     salesRows.forEach((r) => {
@@ -341,60 +485,100 @@ export default function App() {
         r.units || 0,
         r.unit_price || r.price || 0,
         r.unit_cost || r.cost || 0,
-        r.discount_pct !== undefined ? r.discount_pct : r.discount || 0,
+        r.discount_pct !== undefined
+          ? r.discount_pct
+          : r.discount || 0,
         r.revenue || 0,
         r.gross_profit || r.profit || 0,
-        (r.gross_margin !== undefined ? r.gross_margin : r.margin || 0).toFixed(2),
+        (
+          r.gross_margin !== undefined
+            ? r.gross_margin
+            : r.margin || 0
+        ).toFixed(2),
       ];
+
       csvLines.push(row.join(','));
     });
 
-    const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(
+      [csvLines.join('\n')],
+      { type: 'text/csv;charset=utf-8;' }
+    );
+
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
+
     link.href = url;
-    link.setAttribute('download', `tradeframe_sales_${new Date().toISOString().slice(0, 10)}.csv`);
+
+    link.setAttribute(
+      'download',
+      `retailpulse_sales_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
   };
 
-  // Callback after successful file import
+  // =====================================================
+  // IMPORT SUCCESS HANDLER
+  // =====================================================
+
   const handleImportSuccess = () => {
     setDataSource('live');
     fetchLiveAnalytics();
     setActivePage('overview');
   };
 
-  const activeNav = NAV_ITEMS.find((n) => n.id === activePage) || NAV_ITEMS[0];
+  const activeNav =
+    NAV_ITEMS.find((n) => n.id === activePage) || NAV_ITEMS[0];
+
+  // =====================================================
+  // USER INTERFACE
+  // =====================================================
 
   return (
     <div className="tf-shell">
-      {/* Collapsible Sidebar */}
+
+      {/* COLLAPSIBLE SIDEBAR */}
+
       <aside className={`tf-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
-        {/* Brand Header */}
+
+        {/* BRAND HEADER */}
+
         <div className="tf-sidebar-header">
+
           <div className="tf-brand-mark">TF</div>
+
           {!sidebarCollapsed && (
             <div className="tf-brand-text">
               <h1>TRADEFRAME</h1>
               <p>DECISION INTELLIGENCE</p>
             </div>
           )}
+
           <button
             className="tf-collapse-btn"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {sidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+            {sidebarCollapsed
+              ? <ChevronRight size={14} />
+              : <ChevronLeft size={14} />}
           </button>
+
         </div>
 
-        {/* Navigation Menu */}
+        {/* NAVIGATION MENU */}
+
         <nav className="tf-sidebar-nav">
+
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = activePage === item.id;
+
             return (
               <button
                 key={item.id}
@@ -405,95 +589,167 @@ export default function App() {
                 <span className="tf-nav-icon">
                   <Icon size={18} />
                 </span>
+
                 {!sidebarCollapsed && (
                   <span className="tf-nav-label">
                     {item.label}
-                    {item.badge && <span className="tf-nav-badge">{item.badge}</span>}
+
+                    {item.badge && (
+                      <span className="tf-nav-badge">
+                        {item.badge}
+                      </span>
+                    )}
                   </span>
                 )}
               </button>
             );
           })}
+
         </nav>
 
-        {/* Sidebar Footer / System Status */}
+        {/* DATABASE STATUS */}
+
         <div className="tf-sidebar-footer">
+
           <div className="tf-db-status">
+
             <span
               className={`tf-status-dot ${
-                dataSource === 'live' && dbConnected ? 'online' : 'demo'
+                dataSource === 'live' && dbConnected
+                  ? 'online'
+                  : 'demo'
               }`}
             />
+
             {!sidebarCollapsed && (
               <div className="tf-db-status-text">
                 <span className="tf-db-mode">
-                  {dataSource === 'live' ? 'SQLite Engine' : 'Demo Sandbox'}
+                  {dataSource === 'live'
+                    ? 'SQLite Engine'
+                    : 'Demo Sandbox'}
                 </span>
-                <span className="tf-db-sub">TF-MAIN • v2.0</span>
+
+                <span className="tf-db-sub">
+                  TF-MAIN • v2.0
+                </span>
               </div>
             )}
+
           </div>
+
         </div>
+
       </aside>
 
-      {/* Main Content Area */}
+      {/* MAIN CONTENT */}
+
       <div className={`tf-main ${sidebarCollapsed ? 'expanded' : ''}`}>
-        {/* Top Header Bar */}
+
+        {/* TOP HEADER */}
+
         <header className="tf-topbar">
+
           <div className="tf-topbar-left">
+
             <div className="tf-breadcrumb">
-              <span className="tf-breadcrumb-root">Tradeframe</span>
-              <span className="tf-breadcrumb-sep">/</span>
-              <span className="tf-breadcrumb-current">{activeNav.label}</span>
+              <span className="tf-breadcrumb-root">
+                Tradeframe
+              </span>
+
+              <span className="tf-breadcrumb-sep">
+                /
+              </span>
+
+              <span className="tf-breadcrumb-current">
+                {activeNav.label}
+              </span>
             </div>
-            <div className="tf-tagline">From business data to better decisions</div>
+
+            <div className="tf-tagline">
+              From business data to better decisions
+            </div>
+
           </div>
 
           <div className="tf-topbar-right">
-            {/* Live DB / Demo Mode Toggle */}
+
+            {/* DEMO / LIVE DATABASE TOGGLE */}
+
             <div className="tf-mode-toggle">
+
               <button
-                className={`tf-mode-btn ${dataSource === 'demo' ? 'active' : ''}`}
+                className={`tf-mode-btn ${
+                  dataSource === 'demo' ? 'active' : ''
+                }`}
                 onClick={() => setDataSource('demo')}
                 title="Use offline demo dataset"
               >
                 Demo
               </button>
+
               <button
-                className={`tf-mode-btn ${dataSource === 'live' ? 'active' : ''}`}
+                className={`tf-mode-btn ${
+                  dataSource === 'live' ? 'active' : ''
+                }`}
                 onClick={() => setDataSource('live')}
                 title="Connect to SQLite database"
               >
-                <Database size={12} style={{ display: 'inline', marginRight: 4 }} />
+                <Database
+                  size={12}
+                  style={{
+                    display: 'inline',
+                    marginRight: 4,
+                  }}
+                />
                 Live DB
               </button>
+
             </div>
 
-            {/* Refresh Button */}
+            {/* REFRESH BUTTON */}
+
             <button
               className="tf-btn-ghost tf-btn-sm"
-              onClick={dataSource === 'live' ? fetchLiveAnalytics : computeDemoAnalytics}
+              onClick={
+                dataSource === 'live'
+                  ? fetchLiveAnalytics
+                  : computeDemoAnalytics
+              }
               disabled={loading}
               title="Refresh dataset from source"
             >
-              <RefreshCw size={13} className={loading ? 'tf-spin' : ''} />
-              <span className="tf-hide-mobile">Refresh</span>
+              <RefreshCw
+                size={13}
+                className={loading ? 'tf-spin' : ''}
+              />
+
+              <span className="tf-hide-mobile">
+                Refresh
+              </span>
             </button>
 
-            {/* Export CSV Button */}
+            {/* EXPORT CSV */}
+
             <button
               className="tf-btn-primary tf-btn-sm"
               onClick={handleExportCSV}
               title="Download current data view as CSV"
             >
               <Download size={13} />
-              <span className="tf-hide-mobile">Export CSV</span>
+
+              <span className="tf-hide-mobile">
+                Export CSV
+              </span>
             </button>
+
           </div>
+
         </header>
 
-        {/* Page View Body */}
+        {/* PAGE CONTENT */}
+
         <main className="tf-page-wrapper">
+
           {activePage === 'overview' && (
             <OverviewPage
               metrics={metrics}
@@ -583,8 +839,11 @@ export default function App() {
               onRefresh={fetchLiveAnalytics}
             />
           )}
+
         </main>
+
       </div>
+
     </div>
   );
 }
